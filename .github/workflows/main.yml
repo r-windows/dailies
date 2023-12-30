@@ -1,0 +1,76 @@
+name: main
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 1 * * *'
+
+jobs:
+  build:
+    timeout-minutes: 600
+    strategy:
+      fail-fast: false
+      matrix:
+        include: [
+          { msystem: ucrt64, runner: windows-2022 },
+          { msystem: clangarm64, runner: 'self-hosted' }
+        ]
+    name: ${{ matrix.msystem }}
+    runs-on: ${{ matrix.runner }}
+    env:
+      BUILD_URL: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+    steps:
+
+      - name: Kill old processes
+        run: |
+          taskkill /IM gpg-agent.exe /F
+          taskkill /IM pacman.exe /F
+          taskkill /IM bash.exe /F
+          taskkill /IM sh.exe /F
+          taskkill /F /FI "MODULES eq msys-2.0.dll"
+          exit 0
+        shell: cmd
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: git patch make unzip pactoys
+
+      - name: Cleanup old stuff
+        run: rm -Rf */pkg */src
+        shell: msys2 {0}
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Miktex
+        if: matrix.runner != 'self-hosted'
+        shell: powershell
+        run: |
+          Import-Module .\.github\miktex.ps1
+          SetTimezone
+          InstallMiktex -ErrorAction SilentlyContinue;
+
+      - name: Prepare tooling
+        run: ./prepare.sh
+        shell: msys2 {0}
+
+      - name: Download and build R-devel
+        id: build
+        run: ./build.sh
+        shell: msys2 {0}
+
+      - name: "Upload installer"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.installer }}
+          path: ${{ steps.build.outputs.installer }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: 'devel'
+          files: ${{ steps.build.outputs.installer }}
