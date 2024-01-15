@@ -38,6 +38,7 @@ jobs:
         with:
           msystem: ${{ matrix.msystem }}
           install: git patch make unzip pactoys
+          cache: false
 
       - name: Cleanup old stuff
         run: rm -Rf */pkg */src
@@ -75,3 +76,14 @@ jobs:
         with:
           tag_name: 'devel'
           files: ${{ steps.build.outputs.installer }}
+
+      - name: Kill old processes after
+        if: always()
+        run: |
+          taskkill /IM gpg-agent.exe /F
+          taskkill /IM pacman.exe /F
+          taskkill /IM bash.exe /F
+          taskkill /IM sh.exe /F
+          taskkill /F /FI "MODULES eq msys-2.0.dll"
+          exit 0
+        shell: cmd
