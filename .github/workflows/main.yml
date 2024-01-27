@@ -37,8 +37,14 @@ jobs:
         timeout-minutes: 15
         with:
           msystem: ${{ matrix.msystem }}
-          install: git patch make unzip pactoys
+#          install: git patch make unzip pactoys
           cache: false
+
+      - name: update msys2
+        run: |
+          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -Syu --noconfirm
+          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -Sy --needed --noconfirm git patch make unzip pactoys
+        shell: cmd
 
       - name: Cleanup old stuff
         run: rm -Rf */pkg */src
