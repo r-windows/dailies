@@ -33,21 +33,18 @@ jobs:
           exit 0
         shell: cmd
 
-      - uses: msys2/setup-msys2@v2
-        timeout-minutes: 15
+      - uses: msys2/setup-msys2@v2.21.1
         with:
           msystem: ${{ matrix.msystem }}
-#          install: git patch make unzip pactoys
+          install: git patch make unzip pactoys
+          update: true
           cache: false
 
-      - name: update msys2
-        timeout-minutes: 15
-        run: |
-          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -Sy --noconfirm
-          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -S msys2-runtime --noconfirm
-          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -Su --noconfirm
-          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -S --needed --noconfirm git patch make unzip pactoys
-        shell: cmd
+#      - name: update msys2
+#        run: |
+#          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -Syu --noconfirm
+#          %RUNNER_TEMP%\msys64\usr\bin\pacman.exe -Sy --needed --noconfirm git patch make unzip pactoys
+#        shell: cmd
 
       - name: Cleanup old stuff
         run: rm -Rf */pkg */src
